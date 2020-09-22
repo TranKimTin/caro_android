@@ -7,8 +7,18 @@
     tools:context=".MainActivity"
     android:orientation="vertical">
 
-    <com.example.caro.chessboard
+    <Button
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:text="Ván mới"
+        android:id="@+id/btnNewGame"
+        android:padding="10dp"
+        android:textSize="50dp"/>
 
+    <com.example.caro.Chessboard
+        android:id="@+id/chessboard"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"/>
 </LinearLayout>
