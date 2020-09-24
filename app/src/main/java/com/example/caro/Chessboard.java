@@ -48,10 +48,8 @@ public class Chessboard extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
         initBroadChess(canvas);
         drawXO(canvas);
-
     }
 
     @Override
@@ -70,12 +68,14 @@ public class Chessboard extends View {
                     lastTouchX = col;
                     lastTouchY = row;
                 }
+                invalidate();
                 break;
             case MotionEvent.ACTION_MOVE:
                 Log.d(TAG, "Action move");
-                if (row < n && col < m) {
+                if (row < n && col < m && (lastTouchX != col || lastTouchY != row)) {
                     lastTouchX = col;
                     lastTouchY = row;
+                    invalidate();
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -99,6 +99,7 @@ public class Chessboard extends View {
                 }
                 lastTouchX = -1;
                 lastTouchY = -1;
+                invalidate();
                 break;
             case MotionEvent.ACTION_CANCEL:
                 Log.d(TAG, "Action cancel");
@@ -108,7 +109,6 @@ public class Chessboard extends View {
                 break;
         }
 
-        invalidate();
         return true;
     }
 
@@ -193,84 +193,41 @@ public class Chessboard extends View {
         }
     }
 
+    private final int dr[] = {1, 0, 1, 1};
+    private final int dc[] = {0, 1, 1, -1};
+
     private int countXO(int row, int col) {
         int value = board[row][col];
         if (value == empty_cell) return 0;
 
-        //hang
-        int count = 1;
-        int i = 1;
-        boolean check = false;
-        while (row - i >= 0) {
-            if (board[row - i][col] == empty_cell) check = true;
-            if (board[row - i][col] == value) count++;
-            else break;
-            i++;
-        }
-        i = 1;
-        while (row + i < n) {
-            if (board[row + i][col] == empty_cell) check = true;
-            if (board[row + i][col] == value) count++;
-            else break;
-            i++;
-        }
-        if (count >= 4 && check) return count;
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 4; j++) {
+                int startRow = row - dr[j] * i;
+                int startCol = col - dc[j] * i;
 
-        //cot
-        count = 1;
-        i = 1;
-        check = false;
-        while (col - i >= 0) {
-            if (board[row][col - i] == empty_cell) check = true;
-            if (board[row][col - i] == value) count++;
-            else break;
-            i++;
+                if (startRow >= 0 && startRow < n && startCol >= 0 && startCol < m) {
+                    int count = 0;
+                    for (int k = 0; k < 5; k++) {
+                        int r = startRow + k * dr[j];
+                        int c = startCol + k * dc[j];
+                        if (r >= 0 && r < n && c >= 0 && c < m) {
+                            int val = board[r][c];
+                            if (val == value) {
+                                count++;
+                            }
+                            if (val != value && val != empty_cell) {
+                                count = 0;
+                                break;
+                            }
+                        } else {
+                            count = 0;
+                            break;
+                        }
+                    }
+                    if (count >= 4) return count;
+                }
+            }
         }
-        i = 1;
-        while (col + i < m) {
-            if (board[row][col + i] == empty_cell) check = true;
-            if (board[row][col + i] == value) count++;
-            else break;
-            i++;
-        }
-        if (count >= 4 && check) return count;
-
-        //cheo chinh
-        count = 1;
-        i = 1;
-        check = false;
-        while (row - i >= 0 && col - i >= 0) {
-            if (board[row - i][col - i] == empty_cell) check = true;
-            if (board[row - i][col - i] == value) count++;
-            else break;
-            i++;
-        }
-        i = 1;
-        while (row + i < n && col + i < m) {
-            if (board[row + i][col + i] == empty_cell) check = true;
-            if (board[row + i][col + i] == value) count++;
-            else break;
-            i++;
-        }
-        if (count >= 4 && check) return count;
-
-        //cheo phu
-        count = 1;
-        i = 1;
-        while (row - i >= 0 && col + i < m) {
-            if (board[row - i][col + i] == value) count++;
-            else break;
-            i++;
-        }
-        i = 1;
-        while (row + i < n && col - i >= 0) {
-            if (board[row + i][col - i] == empty_cell) check = true;
-            if (board[row + i][col - i] == value) count++;
-            else break;
-            i++;
-        }
-        if (count >= 4 && check) return count;
-
         return 0;
     }
 
