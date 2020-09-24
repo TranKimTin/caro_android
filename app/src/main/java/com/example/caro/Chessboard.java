@@ -29,6 +29,7 @@ public class Chessboard extends View {
     private int lastX = -1, lastY = -1;
     private int lastTouchX = -1, lastTouchY = -1;
     private boolean finish = false;
+    private int direction = 0;
 
     public Chessboard(Context context) {
         super(context);
@@ -95,6 +96,8 @@ public class Chessboard extends View {
                             Toast.makeText(getContext(), "O thắng", Toast.LENGTH_LONG).show();
                         }
                         finish = true;
+                        lastX = -1;
+                        lastY = -1;
                     }
                 }
                 lastTouchX = -1;
@@ -119,7 +122,7 @@ public class Chessboard extends View {
 
         lastPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         lastPaint.setColor(Color.GREEN);
-        lastPaint.setStrokeWidth(10);
+        lastPaint.setStrokeWidth(5);
 
         xPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         xPaint.setColor(Color.BLUE);
@@ -176,15 +179,36 @@ public class Chessboard extends View {
     private void drawXO(Canvas canvas) {
         for (int row = 0; row < n; row++) {
             for (int col = 0; col < m; col++) {
+                if (board[row][col] == empty_cell) continue;
                 int count = countXO(row, col);
                 if (count >= 4) {
                     xPaint.setTextSize((int) (textSize * 1.5));
                     oPaint.setTextSize((int) (textSize * 1.5));
                 }
+
+
                 if (board[row][col] == x_cell)
                     drawTextCentred(canvas, xPaint, "X", col * cellSize + (float) cellSize / 2, row * cellSize + (float) cellSize / 2);
                 if (board[row][col] == o_cell)
                     drawTextCentred(canvas, oPaint, "O", col * cellSize + (float) cellSize / 2, row * cellSize + (float) cellSize / 2);
+                if (count >= 5) {
+                    switch (direction) {
+                        case 1:
+                            canvas.drawLine(cellSize * col, cellSize * row + cellSize/2f, cellSize * (col + 1), cellSize * row + + cellSize/2f, lastPaint);
+                            break;
+                        case 2:
+                            canvas.drawLine(cellSize * col + cellSize/2f, cellSize * row, cellSize * col + cellSize/2f, cellSize * (row + 1), lastPaint);
+
+                            break;
+                        case 3:
+                            canvas.drawLine(cellSize * col, cellSize * row, cellSize * (col + 1), cellSize * (row + 1), lastPaint);
+
+                            break;
+                        case 4:
+                            canvas.drawLine(cellSize * (col+1), cellSize * row, cellSize * col, cellSize * (row + 1), lastPaint);
+                            break;
+                    }
+                }
                 if (count >= 4) {
                     xPaint.setTextSize(textSize);
                     oPaint.setTextSize(textSize);
@@ -193,18 +217,18 @@ public class Chessboard extends View {
         }
     }
 
-    private final int dr[] = {1, 0, 1, 1};
-    private final int dc[] = {0, 1, 1, -1};
+    private final int dr[] = {0, 1, 1, 1};
+    private final int dc[] = {1, 0, 1, -1};
+    private final int direct[] = {1, 2, 3, 4};
 
     private int countXO(int row, int col) {
         int value = board[row][col];
         if (value == empty_cell) return 0;
-
+        int maxCount = 0;
         for (int i = 0; i < 5; i++) {
             for (int j = 0; j < 4; j++) {
                 int startRow = row - dr[j] * i;
                 int startCol = col - dc[j] * i;
-
                 if (startRow >= 0 && startRow < n && startCol >= 0 && startCol < m) {
                     int count = 0;
                     for (int k = 0; k < 5; k++) {
@@ -224,11 +248,17 @@ public class Chessboard extends View {
                             break;
                         }
                     }
-                    if (count >= 4) return count;
+                    if (maxCount < count) maxCount = count;
+                    if (maxCount >= 5) {
+                        direction = direct[j];
+                        break;
+                    }
+                    ;
                 }
             }
+            if (maxCount >= 5) return maxCount;
         }
-        return 0;
+        return maxCount;
     }
 
     public void newGane() {
@@ -241,6 +271,7 @@ public class Chessboard extends View {
         lastY = -1;
         lastTouchX = -1;
         lastTouchY = -1;
+        direction = 0;
         invalidate();
     }
 }
