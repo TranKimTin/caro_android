@@ -12,12 +12,14 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.List;
 
 import androidx.annotation.Nullable;
 
 public class Chessboard extends View {
     private Paint mPaint, xPaint, oPaint, lastPaint;
-    private final int n = 20, m = 15; //n hang, m cot
+    private final int n = 18, m = 15; //n hang, m cot
     private int cellSize; //kich thuoc cua 1 o
     private int[][] board = new int[n][m];
     private final String TAG = "CHESSBOARD";
@@ -26,10 +28,11 @@ public class Chessboard extends View {
     private final boolean x_turn = true, o_turn = false;
     private final int textSize = 50;
     private final Rect textBounds = new Rect();
-    private int lastX = -1, lastY = -1;
-    private int lastTouchX = -1, lastTouchY = -1;
+    private Point last;
+    Point lastTouch;
     private boolean finish = false;
     private int direction = 0;
+    List<Point> status;
 
     public Chessboard(Context context) {
         super(context);
@@ -66,42 +69,43 @@ public class Chessboard extends View {
             case MotionEvent.ACTION_DOWN:
                 Log.d(TAG, "Action down");
                 if (row < n && col < m) {
-                    lastTouchX = col;
-                    lastTouchY = row;
+                    lastTouch.y = row;
+                    lastTouch.x = col;
                 }
                 invalidate();
                 break;
             case MotionEvent.ACTION_MOVE:
                 Log.d(TAG, "Action move");
-                if (row < n && col < m && (lastTouchX != col || lastTouchY != row)) {
-                    lastTouchX = col;
-                    lastTouchY = row;
+                if (row < n && col < m && (lastTouch.y != col || lastTouch.x != row)) {
+                    lastTouch.set(col, row);
+                    if(last.x != row || last.y != col) last.set(-1, -1);
                     invalidate();
                 }
                 break;
             case MotionEvent.ACTION_UP:
                 Log.d(TAG, "Action up");
                 if (row >= 0 && row < n && col >= 0 && col < m && board[row][col] == empty_cell) {
-                    if (playerTurn == x_turn) board[row][col] = x_cell;
-                    if (playerTurn == o_turn) board[row][col] = o_cell;
-                    playerTurn = !playerTurn;
-                    lastX = col;
-                    lastY = row;
-
-                    if (countXO(row, col) >= 5) {
-                        if (board[row][col] == x_cell) {
-                            Toast.makeText(getContext(), "X thắng", Toast.LENGTH_LONG).show();
+                    //Log.d(TAG, last.x + " " + last.y);
+                    if (last.x == row && last.y == col) {
+                        if (playerTurn == x_turn) board[row][col] = x_cell;
+                        if (playerTurn == o_turn) board[row][col] = o_cell;
+                        playerTurn = !playerTurn;
+                        status.add(new Point(row, col));
+                        if (countXO(row, col) >= 5) {
+                            if (board[row][col] == x_cell) {
+                                Toast.makeText(getContext(), "X thắng", Toast.LENGTH_LONG).show();
+                            }
+                            if (board[row][col] == o_cell) {
+                                Toast.makeText(getContext(), "O thắng", Toast.LENGTH_LONG).show();
+                            }
+                            finish = true;
+                            last.set(-1, -1);
                         }
-                        if (board[row][col] == o_cell) {
-                            Toast.makeText(getContext(), "O thắng", Toast.LENGTH_LONG).show();
-                        }
-                        finish = true;
-                        lastX = -1;
-                        lastY = -1;
                     }
+                    last.set(row,col);
+                    //Log.d(TAG, last.x + " " + last.y);
                 }
-                lastTouchX = -1;
-                lastTouchY = -1;
+                lastTouch.set(-1, -1);
                 invalidate();
                 break;
             case MotionEvent.ACTION_CANCEL:
@@ -140,6 +144,10 @@ public class Chessboard extends View {
         for (int i = 0; i < n; i++)
             for (int j = 0; j < m; j++)
                 board[i][j] = empty_cell;
+
+        status = new ArrayList<Point>();
+        lastTouch = new Point(-1,-1);
+        last = new Point(-1,-1);
     }
 
     private void initBroadChess(Canvas canvas) {
@@ -158,13 +166,13 @@ public class Chessboard extends View {
             int x2 = i * cellSize, y2 = n * cellSize;
             canvas.drawLine(x1, y1, x2, y2, mPaint);
         }
-        if (lastX >= 0 && lastY >= 0) {
-            int x1 = lastX * cellSize, y1 = lastY * cellSize;
+        if (last.x >= 0 && last.y >= 0) {
+            int x1 = last.y * cellSize, y1 = last.x * cellSize;
             int x2 = x1 + cellSize, y2 = y1 + cellSize;
             canvas.drawRect(x1, y1, x2, y2, lastPaint);
         }
-        if (lastTouchX >= 0 && lastTouchY >= 0 && board[lastTouchY][lastTouchX] == empty_cell) {
-            int x1 = lastTouchX * cellSize, y1 = lastTouchY * cellSize;
+        if (lastTouch.x >= 0 && lastTouch.y >= 0 && board[lastTouch.y][lastTouch.x] == empty_cell) {
+            int x1 = lastTouch.x * cellSize, y1 = lastTouch.y * cellSize;
             int x2 = x1 + cellSize, y2 = y1 + cellSize;
             canvas.drawRect(x1, y1, x2, y2, lastPaint);
         }
@@ -194,10 +202,10 @@ public class Chessboard extends View {
                 if (count >= 5) {
                     switch (direction) {
                         case 1:
-                            canvas.drawLine(cellSize * col, cellSize * row + cellSize/2f, cellSize * (col + 1), cellSize * row + + cellSize/2f, lastPaint);
+                            canvas.drawLine(cellSize * col, cellSize * row + cellSize / 2f, cellSize * (col + 1), cellSize * row + +cellSize / 2f, lastPaint);
                             break;
                         case 2:
-                            canvas.drawLine(cellSize * col + cellSize/2f, cellSize * row, cellSize * col + cellSize/2f, cellSize * (row + 1), lastPaint);
+                            canvas.drawLine(cellSize * col + cellSize / 2f, cellSize * row, cellSize * col + cellSize / 2f, cellSize * (row + 1), lastPaint);
 
                             break;
                         case 3:
@@ -205,7 +213,7 @@ public class Chessboard extends View {
 
                             break;
                         case 4:
-                            canvas.drawLine(cellSize * (col+1), cellSize * row, cellSize * col, cellSize * (row + 1), lastPaint);
+                            canvas.drawLine(cellSize * (col + 1), cellSize * row, cellSize * col, cellSize * (row + 1), lastPaint);
                             break;
                     }
                 }
@@ -267,11 +275,32 @@ public class Chessboard extends View {
                 board[i][j] = empty_cell;
         finish = false;
         playerTurn = x_turn;
-        lastX = -1;
-        lastY = -1;
-        lastTouchX = -1;
-        lastTouchY = -1;
+        last.set(-1,-1);
+        lastTouch.set(-1, -1);
         direction = 0;
+        status.clear();
+        invalidate();
+    }
+
+    public void undo() {
+        if(status.isEmpty()) return;
+        status.remove(status.size()-1);
+        playerTurn = x_turn;
+        finish = false;
+        for(int i=0; i<n; i++){
+            for(int j=0; j<m; j++){
+                board[i][j] = empty_cell;
+            }
+        }
+        for(int i=0; i<status.size(); i++){
+            Point p = status.get(i);
+            if(playerTurn == x_turn) board[p.x][p.y] = x_cell;
+            if(playerTurn == o_turn) board[p.x][p.y] = o_cell;
+            playerTurn = !playerTurn;
+            last.set(p.x, p.y);
+        }
+
+
         invalidate();
     }
 }

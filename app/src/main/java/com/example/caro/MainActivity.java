@@ -8,15 +8,21 @@ import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private Chessboard chessboard;
-    private Button btnNewGame;
+    private Button btnNewGame, btnUndo;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        setView();
 
+        btnNewGame.setOnClickListener(this);
+        btnUndo.setOnClickListener(this);
+    }
+
+    void setView(){
         chessboard = (Chessboard) findViewById(R.id.chessboard);
         btnNewGame = (Button) findViewById(R.id.btnNewGame);
-        btnNewGame.setOnClickListener(this);
+        btnUndo = (Button) findViewById(R.id.btnUndo);
     }
 
     @Override
@@ -25,6 +31,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btnNewGame:
                 chessboard.newGane();
                 break;
+            case R.id.btnUndo:
+                chessboard.undo();
         }
     }
 }
